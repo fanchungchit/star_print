@@ -1,5 +1,6 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'star_printer.dart';
 import 'star_print_method_channel.dart';
 
 abstract class StarPrintPlatform extends PlatformInterface {
@@ -23,7 +24,25 @@ abstract class StarPrintPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
+  Future<List> discover() {
+    throw UnimplementedError('discover() has not been implemented.');
+  }
+
+  Future<void> printImage({
+    required StarPrinter printer,
+    required List<int> bytes,
+    int? width,
+    int? copies,
+  }) {
+    throw UnimplementedError('printReceipt() has not been implemented.');
+  }
+
+  Future<void> printPath({
+    required StarPrinter printer,
+    required String path,
+    int? width,
+    int? copies,
+  }) {
+    throw UnimplementedError('printPath() has not been implemented.');
   }
 }

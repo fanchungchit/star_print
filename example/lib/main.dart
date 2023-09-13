@@ -1,62 +1,106 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:printing/printing.dart';
 import 'package:star_print/star_print.dart';
 
+import 'build_pdf.dart';
+
 void main() {
-  runApp(const MyApp());
+  runApp(const App());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class App extends StatelessWidget {
+  const App({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: Home(),
+    );
+  }
 }
 
-class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-  final _starPrintPlugin = StarPrint();
+class Home extends StatefulWidget {
+  const Home({super.key});
 
   @override
-  void initState() {
-    super.initState();
-    initPlatformState();
+  State<Home> createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  final StarPrint _starPrint = StarPrint();
+
+  Future<List<StarPrinter>> future() async {
+    final statuses = await [
+      Permission.bluetoothConnect,
+    ].request();
+    if (statuses.values.every((element) => element.isGranted)) {
+      return _starPrint.discover();
+    }
+    throw Exception('Permission denied');
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
+  Future printPdf(StarPrinter printer) async {
     try {
-      platformVersion =
-          await _starPrintPlugin.getPlatformVersion() ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
+      final pdf = await buildPdf(PdfPageFormat.roll80);
+      await for (final page in Printing.raster(pdf)) {
+        await _starPrint.printImage(
+          printer: printer,
+          bytes: await page.toPng(),
+          width: page.width,
+          copies: 2,
+        );
+      }
+    } catch (e) {
+      throw Exception(e);
     }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
-        ),
+    return Scaffold(
+      body: FutureBuilder(
+        future: future(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return ListView(
+              children: [
+                for (final printer in snapshot.data!)
+                  ListTile(
+                    onTap: () => printPdf(printer).catchError((e) {
+                      showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                                title: const Text('Error'),
+                                content: Text('$e'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('OK'),
+                                  ),
+                                ],
+                              ));
+                    }),
+                    title: Text(printer.model.toString()),
+                    subtitle: Text([
+                      printer.address,
+                      printer.interfaceType.name,
+                      printer.emulation
+                    ].join('\n')),
+                  ),
+              ],
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text('${snapshot.error}'),
+            );
+          } else {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+        },
       ),
     );
   }
