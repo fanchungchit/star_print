@@ -17,8 +17,10 @@ import com.starmicronics.stario10.StarDeviceDiscoveryManager
 import com.starmicronics.stario10.StarDeviceDiscoveryManagerFactory
 import com.starmicronics.stario10.StarPrinter
 import com.starmicronics.stario10.starxpandcommand.DocumentBuilder
+import com.starmicronics.stario10.starxpandcommand.DrawerBuilder
 import com.starmicronics.stario10.starxpandcommand.PrinterBuilder
 import com.starmicronics.stario10.starxpandcommand.StarXpandCommandBuilder
+import com.starmicronics.stario10.starxpandcommand.drawer.OpenParameter
 import com.starmicronics.stario10.starxpandcommand.printer.CutType
 import com.starmicronics.stario10.starxpandcommand.printer.ImageParameter
 import kotlinx.coroutines.CoroutineScope
@@ -95,8 +97,9 @@ class StarPrintPlugin: FlutterPlugin, MethodCallHandler {
         val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
         val width = call.argument<Int>("width") ?: 576
         val copies = call.argument<Int>("copies") ?: 1
+        val withDrawer = call.argument<Boolean>("withDrawer") ?: false
 
-        printBitmap(interfaceType, address, bitmap, copies, width)
+        printBitmap(interfaceType, address, bitmap, copies, width, withDrawer)
 
         result.success(null)
       }
@@ -112,8 +115,9 @@ class StarPrintPlugin: FlutterPlugin, MethodCallHandler {
         val bitmap = BitmapFactory.decodeFile(path)
         val width = call.argument<Int>("width") ?: 576
         val copies = call.argument<Int>("copies") ?: 1
+        val withDrawer = call.argument<Boolean>("withDrawer") ?: false
 
-        printBitmap(interfaceType, address, bitmap, copies, width)
+        printBitmap(interfaceType, address, bitmap, copies, width, withDrawer)
 
         result.success(null)
       }
@@ -133,6 +137,7 @@ class StarPrintPlugin: FlutterPlugin, MethodCallHandler {
     bitmap: Bitmap,
     copies: Int,
     width: Int,
+    withDrawer: Boolean,
   ) {
     val settings = StarConnectionSettings(interfaceType, address)
     val printer = StarPrinter(settings, context)
@@ -143,16 +148,18 @@ class StarPrintPlugin: FlutterPlugin, MethodCallHandler {
     scope.launch {
       try {
         val builder = StarXpandCommandBuilder()
-        for (i in 0 until copies) {
-          builder.addDocument(
-            DocumentBuilder()
-              .addPrinter(
-                PrinterBuilder()
-                  .actionPrintImage(ImageParameter(bitmap, width))
-                  .actionCut(CutType.Partial)
-              )
-          )
+        val documentBuilder = DocumentBuilder()
+        if (withDrawer) {
+            documentBuilder.addDrawer(DrawerBuilder().actionOpen(OpenParameter()))
         }
+        val printerBuilder = PrinterBuilder()
+        for (i in 0 until copies) {
+          printerBuilder
+              .actionPrintImage(ImageParameter(bitmap, width))
+              .actionCut(CutType.Partial)
+        }
+        documentBuilder.addPrinter(printerBuilder)
+        builder.addDocument(documentBuilder)
         val commands = builder.getCommands()
 
         printer.openAsync().await()

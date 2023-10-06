@@ -50,6 +50,7 @@ class _HomeState extends State<Home> {
           bytes: await page.toPng(),
           width: page.width,
           copies: 2,
+          withDrawer: true,
         );
       }
     } catch (e) {

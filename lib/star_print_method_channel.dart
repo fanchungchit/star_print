@@ -21,6 +21,7 @@ class MethodChannelStarPrint extends StarPrintPlatform {
     required List<int> bytes,
     int? width,
     int? copies,
+    bool withDrawer = false,
   }) async {
     return await methodChannel.invokeMethod('printImage', {
       'interfaceType': printer.interfaceType.name,
@@ -28,6 +29,7 @@ class MethodChannelStarPrint extends StarPrintPlatform {
       'bytes': bytes,
       'width': width,
       'copies': copies,
+      'withDrawer': withDrawer,
     });
   }
 
@@ -37,6 +39,7 @@ class MethodChannelStarPrint extends StarPrintPlatform {
     required String path,
     int? width,
     int? copies,
+    bool withDrawer = false,
   }) async {
     return await methodChannel.invokeMethod('printPath', {
       'interfaceType': printer.interfaceType.name,
@@ -44,6 +47,7 @@ class MethodChannelStarPrint extends StarPrintPlatform {
       'path': path,
       'width': width,
       'copies': copies,
+      'withDrawer': withDrawer,
     });
   }
 }

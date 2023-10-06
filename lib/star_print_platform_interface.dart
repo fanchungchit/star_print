@@ -33,6 +33,7 @@ abstract class StarPrintPlatform extends PlatformInterface {
     required List<int> bytes,
     int? width,
     int? copies,
+    bool withDrawer = false,
   }) {
     throw UnimplementedError('printReceipt() has not been implemented.');
   }
@@ -42,6 +43,7 @@ abstract class StarPrintPlatform extends PlatformInterface {
     required String path,
     int? width,
     int? copies,
+    bool withDrawer = false,
   }) {
     throw UnimplementedError('printPath() has not been implemented.');
   }

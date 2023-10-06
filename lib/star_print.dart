@@ -16,12 +16,14 @@ class StarPrint {
     required List<int> bytes,
     int? width,
     int? copies,
+    bool withDrawer = false,
   }) async {
     return StarPrintPlatform.instance.printImage(
       printer: printer,
       bytes: bytes,
       width: width,
       copies: copies,
+      withDrawer: withDrawer,
     );
   }
 
@@ -30,12 +32,14 @@ class StarPrint {
     required String path,
     int? width,
     int? copies,
+    bool withDrawer = false,
   }) async {
     return StarPrintPlatform.instance.printPath(
       printer: printer,
       path: path,
       width: width,
       copies: copies,
+      withDrawer: withDrawer,
     );
   }
 }
